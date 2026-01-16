@@ -1,0 +1,16 @@
+# Binary
+csvql
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+
+# Test artifacts
+testdata/.csvql.db*

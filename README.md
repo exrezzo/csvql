@@ -33,6 +33,9 @@ csvql -dir /path/to/data -q "SELECT * FROM myfile LIMIT 10"
 
 # Database path personalizzato
 csvql -dir /path/to/data -db /tmp/mydata.db
+
+# Crea automaticamente datasource in JetBrains IDE (GoLand, DataGrip, etc.)
+csvql -dir /path/to/data -jetbrains
 ```
 
 ### Output
@@ -50,7 +53,17 @@ Watching for changes... (Ctrl+C to stop)
 [UPDATE] /path/to/data/employees.csv
 ```
 
-### Collegamento con DataGrip/DBeaver
+### Integrazione JetBrains IDE
+
+Con il flag `-jetbrains`, csvql crea automaticamente un datasource nel file `.idea/dataSources.xml`:
+
+```bash
+csvql -dir ./data -jetbrains
+```
+
+Funziona con GoLand, DataGrip, IntelliJ IDEA, etc. Il datasource apparirà nel Database tool window dopo un refresh.
+
+### Collegamento manuale con DataGrip/DBeaver
 
 1. Avvia csvql: `csvql -dir /path/to/data`
 2. In DataGrip: **New Data Source** → **SQLite**
