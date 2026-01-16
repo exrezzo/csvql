@@ -1,0 +1,9 @@
+id	name	category	price	stock
+P001	Widget A	Electronics	50.00	150
+P002	Widget B	Electronics	60.00	85
+P003	Widget C	Electronics	50.00	200
+P004	Gadget X	Hardware	120.00	45
+P005	Gadget Y	Hardware	95.00	60
+P006	Tool Alpha	Tools	35.00	300
+P007	Tool Beta	Tools	42.00	180
+P008	Device Pro	Electronics	199.00	25

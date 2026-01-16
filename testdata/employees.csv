@@ -1,0 +1,11 @@
+id,name,email,department,salary,hire_date
+1,Alice Johnson,alice@company.com,Engineering,95000,2020-03-15
+2,Bob Smith,bob@company.com,Sales,75000,2019-07-22
+3,Charlie Brown,charlie@company.com,Engineering,88000,2021-01-10
+4,Diana Ross,diana@company.com,Marketing,72000,2020-11-05
+5,Edward Chen,edward@company.com,Engineering,105000,2018-06-30
+6,Fiona Martinez,fiona@company.com,HR,68000,2022-02-14
+7,George Wilson,george@company.com,Sales,82000,2019-09-18
+8,Hannah Lee,hannah@company.com,Marketing,78000,2021-04-25
+9,Ivan Petrov,ivan@company.com,Engineering,92000,2020-08-12
+10,Julia Wang,julia@company.com,Finance,85000,2019-12-01
