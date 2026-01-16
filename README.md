@@ -61,7 +61,7 @@ Con il flag `-jetbrains`, csvql crea automaticamente un datasource nel file `.id
 csvql -dir ./data -jetbrains
 ```
 
-Funziona con GoLand, DataGrip, IntelliJ IDEA, etc. Il datasource apparirà nel Database tool window dopo un refresh.
+Il datasource prenderà il nome della directory monitorata (es. `data`). Funziona con GoLand, DataGrip, IntelliJ IDEA, etc. Il datasource apparirà nel Database tool window dopo un refresh.
 
 ### Collegamento manuale con DataGrip/DBeaver
 

@@ -148,7 +148,7 @@ func createJetBrainsDatasource(rootDir, dbPath string) error {
 	}
 
 	dsFile := filepath.Join(ideaDir, "dataSources.xml")
-	dsName := "csvql-" + filepath.Base(rootDir)
+	dsName := filepath.Base(rootDir)
 
 	// Calculate relative path from project root to db
 	projectRoot := filepath.Dir(ideaDir)
