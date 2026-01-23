@@ -71,19 +71,57 @@ func TestNew_NestedDirectories(t *testing.T) {
 		t.Errorf("Expected 2 tables, got %d: %v", len(tables), tables)
 	}
 
-	// Check table names reflect path
+	// Check table names - no conflicts so base names are used
 	foundSales := false
 	foundUsers := false
 	for _, tbl := range tables {
-		if tbl == "data_sales_2024" {
+		if tbl == "_2024" { // starts with digit, so prefixed with underscore
 			foundSales = true
 		}
-		if tbl == "data_users_active" {
+		if tbl == "active" {
 			foundUsers = true
 		}
 	}
 	if !foundSales || !foundUsers {
-		t.Errorf("Expected nested table names, got %v", tables)
+		t.Errorf("Expected base table names (_2024, active), got %v", tables)
+	}
+}
+
+func TestNew_NestedDirectories_WithConflict(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create nested structure with conflicting names
+	os.MkdirAll(filepath.Join(tmpDir, "data/sales"), 0755)
+	os.MkdirAll(filepath.Join(tmpDir, "data/users"), 0755)
+
+	// Both files have the same base name "report.csv"
+	os.WriteFile(filepath.Join(tmpDir, "data/sales/report.csv"), []byte("month,amount\nJan,100"), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "data/users/report.csv"), []byte("id,name\n1,test"), 0644)
+
+	c, err := New(Options{RootDir: tmpDir})
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer c.Close()
+
+	tables, _ := c.ListTables()
+	if len(tables) != 2 {
+		t.Errorf("Expected 2 tables, got %d: %v", len(tables), tables)
+	}
+
+	// Check table names - conflict so full paths are used
+	foundSalesReport := false
+	foundUsersReport := false
+	for _, tbl := range tables {
+		if tbl == "data_sales_report" {
+			foundSalesReport = true
+		}
+		if tbl == "data_users_report" {
+			foundUsersReport = true
+		}
+	}
+	if !foundSalesReport || !foundUsersReport {
+		t.Errorf("Expected full path table names (data_sales_report, data_users_report), got %v", tables)
 	}
 }
 

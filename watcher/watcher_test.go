@@ -274,17 +274,17 @@ func TestWatcher_Subdirectory(t *testing.T) {
 		t.Error("Expected event for subdirectory file")
 	}
 
-	// Verify table name includes path
+	// Verify table exists - name is "nested" (base name) since no conflicts
 	tables, _ := m.ListTables()
 	found := false
 	for _, tbl := range tables {
-		if tbl == "subdir_nested" {
+		if tbl == "nested" {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Errorf("Expected 'subdir_nested' table, got %v", tables)
+		t.Errorf("Expected 'nested' table, got %v", tables)
 	}
 }
 

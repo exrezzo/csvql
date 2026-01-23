@@ -132,35 +132,66 @@ func (w *Watcher) watch() {
 }
 
 func (w *Watcher) processFile(path string) {
-	// Check if file exists
+	// Get all current files and resolve desired names
+	files, _ := loader.ScanDirectory(w.rootDir)
+	desiredNames := loader.ResolveTableNames(files, w.rootDir)
+
+	// Get current mappings from DB
+	currentMappings, _ := w.dbManager.GetAllTableMappings()
+
+	// Build set of current files
+	currentFiles := make(map[string]bool)
+	for _, f := range files {
+		currentFiles[f] = true
+	}
+
+	// Check if file was deleted
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		// File was deleted
-		tableName := loader.GetTableName(path, w.rootDir)
-		if err := w.dbManager.RemoveTable(tableName); err != nil {
-			log.Printf("Error removing table %s: %v", tableName, err)
+		// Remove table for deleted file
+		if err := w.dbManager.RemoveTableByPath(path); err != nil {
+			log.Printf("Error removing table for %s: %v", path, err)
 		} else {
 			if w.onChange != nil {
 				w.onChange("DELETE", path)
 			}
-			log.Printf("Removed table: %s", tableName)
+			log.Printf("Removed table for: %s", path)
 		}
-		return
+
+		// Refresh mappings after removal
+		currentMappings, _ = w.dbManager.GetAllTableMappings()
 	}
 
-	// File was created or modified
-	parsed, err := loader.ParseFile(path, w.rootDir)
-	if err != nil {
-		log.Printf("Error parsing file %s: %v", path, err)
-		return
+	// Rename tables that need different names due to conflict changes
+	for filePath, currentName := range currentMappings {
+		if desiredName, exists := desiredNames[filePath]; exists && currentName != desiredName {
+			if err := w.dbManager.RenameTable(currentName, desiredName); err != nil {
+				log.Printf("Error renaming table %s to %s: %v", currentName, desiredName, err)
+			} else {
+				log.Printf("Renamed table: %s -> %s", currentName, desiredName)
+				if w.onChange != nil {
+					w.onChange("RENAME", filePath)
+				}
+			}
+		}
 	}
 
-	if err := w.dbManager.LoadFile(parsed); err != nil {
-		log.Printf("Error loading file %s: %v", path, err)
-		return
-	}
+	// If file exists, load or update it
+	if currentFiles[path] {
+		tableName := desiredNames[path]
+		parsed, err := loader.ParseFile(path, w.rootDir, tableName)
+		if err != nil {
+			log.Printf("Error parsing file %s: %v", path, err)
+			return
+		}
 
-	if w.onChange != nil {
-		w.onChange("UPDATE", path)
+		if err := w.dbManager.LoadFile(parsed); err != nil {
+			log.Printf("Error loading file %s: %v", path, err)
+			return
+		}
+
+		if w.onChange != nil {
+			w.onChange("UPDATE", path)
+		}
+		log.Printf("Updated table: %s", parsed.Info.TableName)
 	}
-	log.Printf("Updated table: %s", parsed.Info.TableName)
 }

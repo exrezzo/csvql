@@ -196,6 +196,81 @@ func (m *Manager) RemoveTable(tableName string) error {
 	return nil
 }
 
+// RemoveTableByPath removes a table associated with the given file path
+func (m *Manager) RemoveTableByPath(filePath string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Find table name from file path
+	var tableName string
+	err := m.db.QueryRow("SELECT table_name FROM _csvql_metadata WHERE file_path = ?", filePath).Scan(&tableName)
+	if err != nil {
+		return fmt.Errorf("no table found for path %s: %w", filePath, err)
+	}
+
+	_, err = m.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName))
+	if err != nil {
+		return err
+	}
+
+	_, err = m.db.Exec("DELETE FROM _csvql_metadata WHERE file_path = ?", filePath)
+	if err != nil {
+		return err
+	}
+
+	delete(m.metadata, tableName)
+	return nil
+}
+
+// RenameTable renames a table and updates metadata
+func (m *Manager) RenameTable(oldName, newName string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if oldName == newName {
+		return nil
+	}
+
+	_, err := m.db.Exec(fmt.Sprintf("ALTER TABLE %s RENAME TO %s", oldName, newName))
+	if err != nil {
+		return err
+	}
+
+	_, err = m.db.Exec("UPDATE _csvql_metadata SET table_name = ? WHERE table_name = ?", newName, oldName)
+	if err != nil {
+		return err
+	}
+
+	if modTime, exists := m.metadata[oldName]; exists {
+		delete(m.metadata, oldName)
+		m.metadata[newName] = modTime
+	}
+
+	return nil
+}
+
+// GetAllTableMappings returns a map of file_path -> table_name for all tables
+func (m *Manager) GetAllTableMappings() (map[string]string, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	rows, err := m.db.Query("SELECT file_path, table_name FROM _csvql_metadata")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string]string)
+	for rows.Next() {
+		var filePath, tableName string
+		if err := rows.Scan(&filePath, &tableName); err != nil {
+			return nil, err
+		}
+		result[filePath] = tableName
+	}
+	return result, rows.Err()
+}
+
 // Query executes a SQL query and returns results
 func (m *Manager) Query(query string) ([]string, [][]string, error) {
 	m.mu.RLock()

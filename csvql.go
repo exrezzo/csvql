@@ -84,8 +84,41 @@ func (c *CSVQL) Scan() error {
 		return fmt.Errorf("failed to scan directory: %w", err)
 	}
 
+	// Resolve table names with conflict detection
+	desiredNames := loader.ResolveTableNames(files, c.RootDir)
+
+	// Get current mappings from DB
+	currentMappings, _ := c.DB.GetAllTableMappings()
+
+	// Build set of current files for quick lookup
+	currentFiles := make(map[string]bool)
+	for _, f := range files {
+		currentFiles[f] = true
+	}
+
+	// Remove tables for files that no longer exist
+	for filePath := range currentMappings {
+		if !currentFiles[filePath] {
+			c.DB.RemoveTableByPath(filePath)
+		}
+	}
+
+	// Refresh mappings after removals
+	currentMappings, _ = c.DB.GetAllTableMappings()
+
+	// Rename tables that need different names due to conflict changes
+	for filePath, currentName := range currentMappings {
+		if desiredName, exists := desiredNames[filePath]; exists && currentName != desiredName {
+			if err := c.DB.RenameTable(currentName, desiredName); err != nil {
+				fmt.Printf("Warning: failed to rename table %s to %s: %v\n", currentName, desiredName, err)
+			}
+		}
+	}
+
+	// Load new or modified files
 	for _, file := range files {
-		parsed, err := loader.ParseFile(file, c.RootDir)
+		tableName := desiredNames[file]
+		parsed, err := loader.ParseFile(file, c.RootDir, tableName)
 		if err != nil {
 			fmt.Printf("Warning: failed to parse %s: %v\n", file, err)
 			continue
